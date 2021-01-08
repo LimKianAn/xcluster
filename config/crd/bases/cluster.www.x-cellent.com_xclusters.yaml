@@ -1,0 +1,77 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: xclusters.cluster.www.x-cellent.com
+spec:
+  group: cluster.www.x-cellent.com
+  names:
+    kind: XCluster
+    listKind: XClusterList
+    plural: xclusters
+    singular: xcluster
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: XCluster is the Schema for the xclusters API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: XClusterSpec defines the desired state of XCluster
+          properties:
+            partition:
+              description: Partition is the physical location where the cluster will be created
+              type: string
+            projectID:
+              description: ProjectID is the projectID of the project in which K8s cluster should be deployed
+              type: string
+            xFirewallTemplate:
+              properties:
+                metadata:
+                  type: object
+                spec:
+                  description: XFirewallSpec defines the desired state of XFirewall
+                  properties:
+                    defaultNetworkID:
+                      type: string
+                    image:
+                      type: string
+                    machineID:
+                      type: string
+                    size:
+                      type: string
+                  type: object
+              type: object
+          required:
+          - partition
+          - projectID
+          type: object
+        status:
+          description: XClusterStatus defines the observed state of XCluster
+          properties:
+            ready:
+              type: boolean
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

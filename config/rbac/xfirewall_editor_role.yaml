@@ -1,0 +1,24 @@
+# permissions for end users to edit xfirewalls.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: xfirewall-editor-role
+rules:
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xfirewalls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xfirewalls/status
+  verbs:
+  - get

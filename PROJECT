@@ -1,0 +1,10 @@
+domain: www.x-cellent.com
+repo: github.com/LimKianAn/xcluster
+resources:
+- group: cluster
+  kind: XCluster
+  version: v1
+- group: cluster
+  kind: XFirewall
+  version: v1
+version: "2"

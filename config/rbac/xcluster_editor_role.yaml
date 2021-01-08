@@ -1,0 +1,24 @@
+# permissions for end users to edit xclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: xcluster-editor-role
+rules:
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters/status
+  verbs:
+  - get

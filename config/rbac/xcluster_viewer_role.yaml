@@ -1,0 +1,20 @@
+# permissions for end users to view xclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: xcluster-viewer-role
+rules:
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters/status
+  verbs:
+  - get

@@ -1,0 +1,48 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xclusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xfirewalls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.www.x-cellent.com
+  resources:
+  - xfirewalls/status
+  verbs:
+  - get
+  - patch
+  - update
