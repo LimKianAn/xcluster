@@ -43,6 +43,8 @@ type XFirewallStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
 
 // XFirewall is the Schema for the xfirewalls API
 type XFirewall struct {

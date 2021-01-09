@@ -77,6 +77,7 @@ func main() {
 
 	if err = (&controllers.XClusterReconciler{
 		Client: mgr.GetClient(),
+		Driver: metalClient, // blog:
 		Log:    ctrl.Log.WithName("controllers").WithName("XCluster"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

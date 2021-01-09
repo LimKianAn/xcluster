@@ -31,10 +31,13 @@ spec:
           description: XClusterSpec defines the desired state of XCluster
           properties:
             partition:
-              description: Partition is the physical location where the cluster will be created
+              description: Partition is the physical location where the cluster will be created.
+              type: string
+            privateNetworkID:
+              description: PrivateNetworkID is the network ID which connects all the machines together.
               type: string
             projectID:
-              description: ProjectID is the projectID of the project in which K8s cluster should be deployed
+              description: ProjectID is for grouping all the project-related resources.
               type: string
             xFirewallTemplate:
               properties:

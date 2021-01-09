@@ -49,7 +49,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the XFirewall in the Request.
 	fw := &clusterv1.XFirewall{}
 	if err := r.Get(ctx, req.NamespacedName, fw); err != nil {
-		log.Error(err, "err while fetching the XFirewall")
+		// blog: why?
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -82,22 +82,26 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if fw.Spec.MachineID == "" {
 		cl := &clusterv1.XCluster{}
 		if err := r.Get(ctx, types.NamespacedName{
-			Namespace: fw.ObjectMeta.Namespace,
-			Name:      fw.ObjectMeta.Name,
+			Namespace: fw.Namespace,
+			Name:      fw.Name,
 		}, cl); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to fetch the corresponding cluster: %w", err)
 		}
 
+		log.Info("before creating a firewall", "req:", req)
 		resp, err := r.FirewallCreate(&metalgo.FirewallCreateRequest{
 			MachineCreateRequest: metalgo.MachineCreateRequest{
-				Description: "",
-				Name:        fw.Name,
-				Hostname:    fw.Name + "-firewall",
-				Size:        fw.Spec.Size,
-				Project:     cl.Spec.ProjectID,
-				Partition:   cl.Spec.Partition,
-				Image:       fw.Spec.Image,
-				Networks:    toNetworks(fw.Spec.DefaultNetworkID),
+				Description:   "",
+				Name:          fw.Name,
+				Hostname:      fw.Name + "-firewall",
+				Size:          fw.Spec.Size,
+				Project:       cl.Spec.ProjectID,
+				Partition:     cl.Spec.Partition,
+				Image:         fw.Spec.Image,
+				SSHPublicKeys: []string{},
+				Networks:      toNetworks(fw.Spec.DefaultNetworkID, cl.Spec.PrivateNetworkID),
+				UserData:      "",
+				Tags:          []string{},
 			},
 		})
 		if err != nil {
@@ -118,6 +122,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err := r.Update(ctx, fw); err != nil {
 		return ctrl.Result{}, fmt.Errorf("error while updating the status of the firewall: %w", err)
 	}
+
 	return ctrl.Result{}, nil
 }
 

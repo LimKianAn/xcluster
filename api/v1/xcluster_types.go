@@ -28,10 +28,13 @@ type XClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Partition is the physical location where the cluster will be created
+	// Partition is the physical location where the cluster will be created.
 	Partition string `json:"partition"`
 
-	// ProjectID is the projectID of the project in which K8s cluster should be deployed
+	// PrivateNetworkID is the network ID which connects all the machines together.
+	PrivateNetworkID string `json:"privateNetworkID,omitempty"`
+
+	// ProjectID is for grouping all the project-related resources.
 	ProjectID string `json:"projectID"`
 
 	XFirewallTemplate XFirewallTemplate `json:"xFirewallTemplate,omitempty"`
@@ -50,7 +53,11 @@ type XClusterStatus struct {
 	Ready bool `json:"ready,omitempty"`
 }
 
+// blog: Explaine each following line.
+
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
 
 // XCluster is the Schema for the xclusters API
 type XCluster struct {

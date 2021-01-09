@@ -2,6 +2,7 @@ apiVersion: cluster.www.x-cellent.com/v1
 kind: XCluster
 metadata:
   name: x-cellent
+  namespace: default
 spec:
   partition: vagrant
   projectID: 00000000-0000-0000-0000-000000000000
