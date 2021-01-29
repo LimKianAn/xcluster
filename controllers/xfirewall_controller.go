@@ -58,7 +58,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if fw.IsBeingDeleted() {
 		log.Info("resetting the states of the machine managed by XFirewall")
 
-		if _, err := r.MachineDelete(fw.Spec.MachineID); err != nil {
+		if _, err := r.Driver.MachineDelete(fw.Spec.MachineID); err != nil {
 			return ctrl.Result{}, fmt.Errorf("error while deleting the underlying raw firewall: %w", err)
 		}
 
@@ -88,7 +88,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, fmt.Errorf("failed to fetch the corresponding cluster: %w", err)
 		}
 
-		resp, err := r.FirewallCreate(&metalgo.FirewallCreateRequest{
+		resp, err := r.Driver.FirewallCreate(&metalgo.FirewallCreateRequest{
 			MachineCreateRequest: metalgo.MachineCreateRequest{
 				Description:   "",
 				Name:          fw.Name,

@@ -60,7 +60,7 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// No other resources are managed by our XCluster, so we don't have to consider the finalizer. // blog
 
 	if cl.Spec.PrivateNetworkID == "" {
-		resp, err := r.NetworkAllocate(&metalgo.NetworkAllocateRequest{
+		resp, err := r.Driver.NetworkAllocate(&metalgo.NetworkAllocateRequest{
 			Name:        cl.Spec.Partition,
 			PartitionID: cl.Spec.Partition,
 			ProjectID:   cl.Spec.ProjectID,
