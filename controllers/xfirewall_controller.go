@@ -88,7 +88,6 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, fmt.Errorf("failed to fetch the corresponding cluster: %w", err)
 		}
 
-		log.Info("before creating a firewall", "req:", req)
 		resp, err := r.FirewallCreate(&metalgo.FirewallCreateRequest{
 			MachineCreateRequest: metalgo.MachineCreateRequest{
 				Description:   "",

@@ -48,7 +48,7 @@ type XClusterReconciler struct {
 
 func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	_ = r.Log.WithValues("xcluster", req.NamespacedName)
+	logger := r.Log.WithValues("xcluster", req.NamespacedName)
 
 	// Fetch the XCluster in the Request.
 	cl := &clusterv1.XCluster{}
@@ -104,9 +104,14 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
+	if !fw.Status.Ready {
+		logger.Info("firewall not ready")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// Skip update. blog
 
-	cl.Status.Ready = fw.Status.Ready
+	cl.Status.Ready = true
 	if err := r.Update(ctx, cl); err != nil {
 		return ctrl.Result{}, fmt.Errorf("error while updating the readiness of the XCluster: %v", err)
 	}

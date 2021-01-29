@@ -37,6 +37,7 @@ type XClusterSpec struct {
 	// ProjectID is for grouping all the project-related resources.
 	ProjectID string `json:"projectID"`
 
+	// XFirewallTemplate is the template of the XFirewall.
 	XFirewallTemplate XFirewallTemplate `json:"xFirewallTemplate,omitempty"`
 }
 
