@@ -8,6 +8,10 @@ metadata:
   creationTimestamp: null
   name: xclusters.cluster.www.x-cellent.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.ready
+    name: Ready
+    type: string
   group: cluster.www.x-cellent.com
   names:
     kind: XCluster
@@ -15,15 +19,21 @@ spec:
     plural: xclusters
     singular: xcluster
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: XCluster is the Schema for the xclusters API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -31,15 +41,18 @@ spec:
           description: XClusterSpec defines the desired state of XCluster
           properties:
             partition:
-              description: Partition is the physical location where the cluster will be created.
+              description: Partition is the physical location where the cluster will
+                be created.
               type: string
             privateNetworkID:
-              description: PrivateNetworkID is the network ID which connects all the machines together.
+              description: PrivateNetworkID is the network ID which connects all the
+                machines together.
               type: string
             projectID:
               description: ProjectID is for grouping all the project-related resources.
               type: string
             xFirewallTemplate:
+              description: XFirewallTemplate is the template of the XFirewall.
               properties:
                 metadata:
                   type: object

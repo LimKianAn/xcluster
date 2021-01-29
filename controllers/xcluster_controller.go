@@ -37,7 +37,7 @@ type XClusterReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 	// blog: why do we need the driver?
-	*metalgo.Driver
+	Driver *metalgo.Driver
 }
 
 // blog: Explain the lines about xfirewalls
@@ -77,8 +77,6 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	fw := &clusterv1.XFirewall{}
 	if err := r.Get(ctx, req.NamespacedName, fw); err != nil {
-		// blog: Explain the reason.
-		cl.Status.Ready = false
 		if err := r.Update(ctx, cl); err != nil {
 			return ctrl.Result{}, fmt.Errorf("error while updating the readiness of the XCluster: %v", err)
 		}

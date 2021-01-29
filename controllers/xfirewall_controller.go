@@ -36,7 +36,7 @@ type XFirewallReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 	// blog: Add the client to the reconciler to interact with `metal-api`.
-	*metalgo.Driver
+	Driver *metalgo.Driver
 }
 
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xfirewalls,verbs=get;list;watch;create;update;patch;delete
@@ -54,6 +54,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Resetting the states of the underlying raw machine before XFirewall is deleted on API-server. // blog
+	// TODO: Move to seperate function
 	if fw.IsBeingDeleted() {
 		log.Info("resetting the states of the machine managed by XFirewall")
 
@@ -112,11 +113,7 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
-	resp, err := r.FirewallGet(fw.Spec.MachineID)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("error while fetching the underlying raw firewall: %w", err)
-	}
-	fw.Status.Ready = *(resp.Firewall.Allocation.Succeeded)
+	fw.Status.Ready = true
 	if err := r.Update(ctx, fw); err != nil {
 		return ctrl.Result{}, fmt.Errorf("error while updating the status of the firewall: %w", err)
 	}
