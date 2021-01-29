@@ -76,7 +76,6 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, fmt.Errorf("error while updating the finalizer of the XFirewall: %w", err)
 		}
 		r.Log.Info("finalizer added")
-		return ctrl.Result{}, nil
 	}
 
 	if fw.Spec.MachineID == "" {
