@@ -77,7 +77,7 @@ func main() {
 
 	if err = (&controllers.XClusterReconciler{
 		Client: mgr.GetClient(),
-		Driver: metalClient, // blog:
+		Driver: metalClient,
 		Log:    ctrl.Log.WithName("controllers").WithName("XCluster"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -86,7 +86,7 @@ func main() {
 	}
 	if err = (&controllers.XFirewallReconciler{
 		Client: mgr.GetClient(),
-		Driver: metalClient, // blog:
+		Driver: metalClient,
 		Log:    ctrl.Log.WithName("controllers").WithName("XFirewall"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

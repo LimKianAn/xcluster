@@ -54,8 +54,6 @@ type XClusterStatus struct {
 	Ready bool `json:"ready,omitempty"`
 }
 
-// blog: Explaine each following line.
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
@@ -73,17 +71,27 @@ func (fw *XCluster) IsBeingDeleted() bool {
 	return !fw.ObjectMeta.DeletionTimestamp.IsZero()
 }
 
-// XClusterFinalizer is for the resources managed by XCluster. // blog
+// XClusterFinalizer is for cleaning up the resources managed by XCluster
 const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"
 
-func (fw *XCluster) AddFinalizer(finalizer string) {
-	fw.ObjectMeta.Finalizers = append(fw.ObjectMeta.Finalizers, finalizer)
+func (cl *XCluster) AddFinalizer(finalizer string) {
+	cl.ObjectMeta.Finalizers = append(cl.ObjectMeta.Finalizers, finalizer)
 }
-func (fw *XCluster) HasFinalizer(finalizer string) bool {
-	return containsElem(fw.ObjectMeta.Finalizers, finalizer)
+func (cl *XCluster) HasFinalizer(finalizer string) bool {
+	return containsElem(cl.ObjectMeta.Finalizers, finalizer)
 }
-func (fw *XCluster) RemoveFinalizer(finalizer string) {
-	fw.ObjectMeta.Finalizers = removeElem(fw.ObjectMeta.Finalizers, finalizer)
+func (cl *XCluster) RemoveFinalizer(finalizer string) {
+	cl.ObjectMeta.Finalizers = removeElem(cl.ObjectMeta.Finalizers, finalizer)
+}
+
+func (cl *XCluster) ToXFirewall() *XFirewall {
+	fw := &XFirewall{}
+	fw.Name = cl.Name
+	fw.Namespace = cl.Namespace
+	fw.Spec.DefaultNetworkID = cl.Spec.XFirewallTemplate.Spec.DefaultNetworkID
+	fw.Spec.Image = cl.Spec.XFirewallTemplate.Spec.Image
+	fw.Spec.Size = cl.Spec.XFirewallTemplate.Spec.Size
+	return fw
 }
 
 // +kubebuilder:object:root=true

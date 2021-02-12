@@ -59,7 +59,7 @@ func (fw *XFirewall) IsBeingDeleted() bool {
 	return !fw.ObjectMeta.DeletionTimestamp.IsZero()
 }
 
-// XFirewallFinalizer is for the resources managed by XFirewall. // blog
+// XFirewallFinalizer is for cleaning up the resources managed by XFirewall
 const XFirewallFinalizer = "xfirewall.finalizers.cluster.www.x-cellent.com"
 
 func (fw *XFirewall) AddFinalizer(finalizer string) {

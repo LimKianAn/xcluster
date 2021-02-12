@@ -35,7 +35,6 @@ type XFirewallReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
-	// blog: Add the client to the reconciler to interact with `metal-api`.
 	Driver *metalgo.Driver
 }
 
@@ -46,76 +45,102 @@ func (r *XFirewallReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("xfirewall", req.NamespacedName)
 
-	// Fetch the XFirewall in the Request.
+	// Fetch XFirewall instance
 	fw := &clusterv1.XFirewall{}
 	if err := r.Get(ctx, req.NamespacedName, fw); err != nil {
-		// blog: why?
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Resetting the states of the underlying raw machine before XFirewall is deleted on API-server. // blog
-	// TODO: Move to seperate function
 	if fw.IsBeingDeleted() {
-		log.Info("resetting the states of the machine managed by XFirewall")
-
-		if _, err := r.Driver.MachineDelete(fw.Spec.MachineID); err != nil {
-			return ctrl.Result{}, fmt.Errorf("error while deleting the underlying raw firewall: %w", err)
-		}
-
-		fw.RemoveFinalizer(clusterv1.XFirewallFinalizer)
-		if err := r.Update(ctx, fw); err != nil {
-			return ctrl.Result{}, fmt.Errorf("error while removing the finalizers of the XFirewall: %w", err)
-		}
-
-		return ctrl.Result{}, nil
+		// Resetting the states of the underlying raw machine before XFirewall is deleted on API-server.
+		return r.DeleteMetalStackFirewall(ctx, fw, log)
 	}
 
 	// Add finalizer if none.
 	if !fw.HasFinalizer(clusterv1.XFirewallFinalizer) {
 		fw.AddFinalizer(clusterv1.XFirewallFinalizer)
 		if err := r.Update(ctx, fw); err != nil {
-			return ctrl.Result{}, fmt.Errorf("error while updating the finalizer of the XFirewall: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to update XFirewall finalizer: %w", err)
 		}
 		r.Log.Info("finalizer added")
 	}
 
 	if fw.Spec.MachineID == "" {
-		cl := &clusterv1.XCluster{}
-		if err := r.Get(ctx, types.NamespacedName{
-			Namespace: fw.Namespace,
-			Name:      fw.Name,
-		}, cl); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to fetch the corresponding cluster: %w", err)
+		if err := r.CreateMetalStackFirewall(ctx, fw); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to create metal-stack firewall: %w", err)
 		}
+		r.Log.Info("metal-stack firewall created")
+	}
 
-		resp, err := r.Driver.FirewallCreate(&metalgo.FirewallCreateRequest{
-			MachineCreateRequest: metalgo.MachineCreateRequest{
-				Description:   "",
-				Name:          fw.Name,
-				Hostname:      fw.Name + "-firewall",
-				Size:          fw.Spec.Size,
-				Project:       cl.Spec.ProjectID,
-				Partition:     cl.Spec.Partition,
-				Image:         fw.Spec.Image,
-				SSHPublicKeys: []string{},
-				Networks:      toNetworks(fw.Spec.DefaultNetworkID, cl.Spec.PrivateNetworkID),
-				UserData:      "",
-				Tags:          []string{},
-			},
-		})
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create the firewall: %w", err)
-		}
+	return r.UpdateAndCheckFirewallStatus(ctx, fw, log)
+}
 
-		fw.Spec.MachineID = *resp.Firewall.ID
+func (r *XFirewallReconciler) CreateMetalStackFirewall(ctx context.Context, fw *clusterv1.XFirewall) error {
+	cl := &clusterv1.XCluster{}
+	if err := r.Get(ctx, types.NamespacedName{
+		Namespace: fw.Namespace,
+		Name:      fw.Name,
+	}, cl); err != nil {
+		return fmt.Errorf("failed to fetch owner XCluster instance: %w", err)
+	}
+
+	resp, err := r.Driver.FirewallCreate(&metalgo.FirewallCreateRequest{
+		MachineCreateRequest: metalgo.MachineCreateRequest{
+			Description:   "",
+			Name:          fw.Name,
+			Hostname:      fw.Name + "-firewall",
+			Size:          fw.Spec.Size,
+			Project:       cl.Spec.ProjectID,
+			Partition:     cl.Spec.Partition,
+			Image:         fw.Spec.Image,
+			SSHPublicKeys: []string{},
+			Networks:      toNetworks(fw.Spec.DefaultNetworkID, cl.Spec.PrivateNetworkID),
+			UserData:      "",
+			Tags:          []string{},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create metal-stack firewall: %w", err)
+	}
+
+	fw.Spec.MachineID = *resp.Firewall.ID
+	if err := r.Update(ctx, fw); err != nil {
+		return fmt.Errorf("failed to update XFirewall machine-ID: %w", err)
+	}
+
+	return nil
+}
+
+func (r *XFirewallReconciler) DeleteMetalStackFirewall(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
+	if _, err := r.Driver.MachineDelete(fw.Spec.MachineID); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to delete firewall: %w", err)
+	}
+	log.Info("states of the machine managed by XFirewall reset")
+
+	fw.RemoveFinalizer(clusterv1.XFirewallFinalizer)
+	if err := r.Update(ctx, fw); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to remove XFirewall finalizer: %w", err)
+	}
+	r.Log.Info("finalizer removed")
+
+	return ctrl.Result{}, nil
+}
+
+func (r *XFirewallReconciler) UpdateAndCheckFirewallStatus(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
+	resp, err := r.Driver.FirewallGet(fw.Spec.MachineID)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("error while fetching the underlying raw firewall: %w", err)
+	}
+	isReady := *resp.Firewall.Allocation.Succeeded
+	if fw.Status.Ready != isReady {
+		fw.Status.Ready = isReady
 		if err := r.Update(ctx, fw); err != nil {
-			return ctrl.Result{}, fmt.Errorf("error while updating the machine-ID of the firewall: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to update the status of the firewall: %w", err)
 		}
 	}
 
-	fw.Status.Ready = true
-	if err := r.Update(ctx, fw); err != nil {
-		return ctrl.Result{}, fmt.Errorf("error while updating the status of the firewall: %w", err)
+	if !fw.Status.Ready {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
