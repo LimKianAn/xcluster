@@ -60,7 +60,7 @@ Go back to the previous terminal where you did
 docker-compose run metalctl machine ls
 ```
 
-You should see a *metal-stack* firewall running.
+Repeat the command and you should see a *metal-stack* firewall running.
 
 ## kubebuilder markers for CustomerResourceDefinition (CRD)
 
