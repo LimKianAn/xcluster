@@ -70,15 +70,13 @@ You should see a *metal-stack* firewall running.
 // +kubebuilder:object:root=true
 ```
 
-This denotes the following *go* `struct` will be the *API resource* in the url:
-**/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster**
+This denotes the following *go* `struct` will be the *API resource* in the url: `/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster`
 
 ```go
 // +kubebuilder:subresource:status
 ```
 
-This denotes the following *go* `sturct` contains a *API subresource*:
-**/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster/status**
+This denotes the following *go* `sturct` contains a *API subresource*: `/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster/status`
 
 ```go
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
