@@ -27,7 +27,11 @@ spec:
         - /manager
         args:
         - --enable-leader-election
+        envFrom:
+          - configMapRef:
+              name: controller-manager-configmap
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         resources:
           limits:

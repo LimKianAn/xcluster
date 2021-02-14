@@ -4,6 +4,8 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+MINI_LAB_PATH ?= ../mini-lab
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -33,8 +35,9 @@ install: manifests
 uninstall: manifests
 	kustomize build config/crd | kubectl delete -f -
 
+# todo: make it work
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
+deploy: manifests configmap kind-load-image
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
@@ -62,6 +65,10 @@ docker-build: test
 docker-push:
 	docker push ${IMG}
 
+# Load image to local kind cluster
+kind-load-image: docker-build
+	kind load docker-image ${IMG} --name metal-control-plane -v 1
+
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
@@ -78,3 +85,11 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+configmap:
+	kubectl create configmap -n system controller-manager-configmap \
+		--from-literal=METALCTL_URL=http://api.0.0.0.0.xip.io:8080/metal \
+		--from-literal=METALCTL_HMAC=metal-admin \
+		--from-file=KUBECONFIG=${MINI_LAB_PATH}/.kubeconfig \
+		--dry-run=client -o=yaml \
+		> config/manager/configmap.yaml

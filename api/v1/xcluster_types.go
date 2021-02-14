@@ -67,10 +67,6 @@ type XCluster struct {
 	Status XClusterStatus `json:"status,omitempty"`
 }
 
-func (fw *XCluster) IsBeingDeleted() bool {
-	return !fw.ObjectMeta.DeletionTimestamp.IsZero()
-}
-
 // XClusterFinalizer is for cleaning up the resources managed by XCluster
 const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"
 
@@ -82,6 +78,10 @@ func (cl *XCluster) HasFinalizer(finalizer string) bool {
 }
 func (cl *XCluster) RemoveFinalizer(finalizer string) {
 	cl.ObjectMeta.Finalizers = removeElem(cl.ObjectMeta.Finalizers, finalizer)
+}
+
+func (fw *XCluster) IsBeingDeleted() bool {
+	return !fw.ObjectMeta.DeletionTimestamp.IsZero()
 }
 
 func (cl *XCluster) ToXFirewall() *XFirewall {

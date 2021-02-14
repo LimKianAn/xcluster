@@ -1,5 +1,5 @@
 
-# Minimal computer cluster
+# xcluster, a minimal computer cluster
 
 ## Goal
 
@@ -8,6 +8,59 @@ On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](ht
 ## CustomResource XCluster and XFirewall
 
 In this post, we will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples. We created two *CustomResource* (*CR*): `XCluster` and `XFirewall`. `XCluster` represents the computer cluster and `XCluster` corresponds to *metal-stack* resource *firewall*. We would like to keep it simple. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way.
+
+## Demo
+
+Clone the repo of *mini-lab* and *xcluster* in the same folder.
+
+```console
+├── mini-lab
+└── xcluster
+```
+
+Download the prerequisite of [*mini-lab*](https://github.com/metal-stack/mini-lab#requirements). Then,
+
+```bash
+cd mini-lab
+make
+```
+
+It's going to take some time to finish. From time to tiem, do
+
+```bash
+docker-compose run metalctl machine ls
+```
+
+Till you see **Waiting** under **LAST EVENT** as follows:
+
+```console
+ID                                          LAST EVENT   WHEN     AGE  HOSTNAME  PROJECT  SIZE          IMAGE  PARTITION
+e0ab02d2-27cd-5a5e-8efc-080ba80cf258        Waiting      8s                               v1-small-x86         vagrant
+2294c949-88f6-5390-8154-fa53d93a3313        Waiting      8s                               v1-small-x86         vagrant
+```
+
+Then, in another terminal yet still in `mini-lab`, do
+
+``` bash
+eval $(make dev-env) # for talking to metal-api in this shell
+cd ../xcluster
+```
+
+Now you should be in the folder of *xcluster*. Then,
+
+```bash
+make install
+kubectl apply -f config config/samples/cluster_v1_xcluster.yaml
+make run
+```
+
+Go back to the previous terminal where you did
+
+```bash
+docker-compose run metalctl machine ls
+```
+
+You should see a *metal-stack* firewall running.
 
 ## kubebuilder markers for CustomerResourceDefinition (CRD)
 

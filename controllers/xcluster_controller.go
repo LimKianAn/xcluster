@@ -55,7 +55,7 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if cl.IsBeingDeleted() {
-		return r.FreeMetalStackNetwork(ctx, cl, log)
+		return r.ReconcileDeletion(ctx, cl, log)
 	}
 
 	// Add finalizer if none.
@@ -115,9 +115,15 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (r *XClusterReconciler) FreeMetalStackNetwork(ctx context.Context, cl *clusterv1.XCluster, log logr.Logger) (ctrl.Result, error) {
+func (r *XClusterReconciler) ReconcileDeletion(ctx context.Context, cl *clusterv1.XCluster, log logr.Logger) (ctrl.Result, error) {
+	if err := r.Delete(ctx, cl.ToXFirewall()); client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to delete XFirewall: %w", err)
+	}
+	log.Info("XFirewall deleted")
+
+	// todo: A better solution would be asking metal-api if this network is occupied before freeing the network.
 	if _, err := r.Driver.NetworkFree(cl.Spec.PrivateNetworkID); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to free metal-stack network: %w", err)
+		return ctrl.Result{Requeue: true}, nil
 	}
 	log.Info("metal-stack network freed")
 

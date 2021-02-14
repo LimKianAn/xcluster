@@ -22,3 +22,6 @@ bin
 *.swp
 *.swo
 *~
+
+# should be generated dynamically
+*config/manager/configmap.yaml
