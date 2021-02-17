@@ -4,8 +4,6 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-MINI_LAB_PATH ?= ../mini-lab
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -13,7 +11,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+all: deploy
 
 # Run tests
 test: generate fmt vet manifests
@@ -24,7 +22,7 @@ manager: generate fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
+run: generate fmt vet manifests install
 	go run ./main.go
 
 # Install CRDs into a cluster
@@ -37,7 +35,7 @@ uninstall: manifests
 
 # todo: make it work
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests configmap kind-load-image
+deploy: manifests configmap install kind-load-image
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
 
@@ -88,8 +86,7 @@ endif
 
 configmap:
 	kubectl create configmap -n system controller-manager-configmap \
-		--from-literal=METALCTL_URL=http://api.0.0.0.0.xip.io:8080/metal \
 		--from-literal=METALCTL_HMAC=metal-admin \
-		--from-file=KUBECONFIG=${MINI_LAB_PATH}/.kubeconfig \
+		--from-literal=METALCTL_URL=http://api.0.0.0.0.xip.io:8080/metal \
 		--dry-run=client -o=yaml \
 		> config/manager/configmap.yaml

@@ -62,7 +62,7 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if !cl.HasFinalizer(clusterv1.XFirewallFinalizer) {
 		cl.AddFinalizer(clusterv1.XFirewallFinalizer)
 		if err := r.Update(ctx, cl); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to update XFirewall finalizer: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to update xfirewall finalizer: %w", err)
 		}
 		r.Log.Info("finalizer added")
 	}
@@ -74,13 +74,13 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			ProjectID:   cl.Spec.ProjectID,
 		})
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to allocating network: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to allocate metal-stack network-ID: %w", err)
 		}
-		log.Info("private network-ID allocated")
+		log.Info("private metal-stack network-ID allocated")
 
 		cl.Spec.PrivateNetworkID = *resp.Network.ID
 		if err := r.Update(ctx, cl); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to update the privateNetworkID of the XCluster: %v", err)
+			return ctrl.Result{}, fmt.Errorf("failed to update the privateNetworkID of the xcluster: %v", err)
 		}
 	}
 
@@ -88,7 +88,7 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err := r.Get(ctx, req.NamespacedName, fw); err != nil {
 		// errors other than `NotFound`
 		if !errors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("failed to fetch XFirewall instance: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to fetch xfirewall instance: %w", err)
 		}
 
 		// Create XFirewall instance
@@ -96,11 +96,11 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		// cl is the owner of fw. Once cl is deleted, so is fw automatically.
 		if err := controllerutil.SetControllerReference(cl, fw, r.Scheme); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set the owner reference of the XFirewall: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to set the owner reference of the xfirewall: %w", err)
 		}
 
 		if err := r.Create(ctx, fw); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create the firewall: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to create xfirewall: %w", err)
 		}
 	}
 	if !fw.Status.Ready {
@@ -108,8 +108,8 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	cl.Status.Ready = true
-	if err := r.Update(ctx, cl); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to update the readiness of the XCluster: %v", err)
+	if err := r.Status().Update(ctx, cl); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update the readiness of the xcluster: %v", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -117,19 +117,33 @@ func (r *XClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *XClusterReconciler) ReconcileDeletion(ctx context.Context, cl *clusterv1.XCluster, log logr.Logger) (ctrl.Result, error) {
 	if err := r.Delete(ctx, cl.ToXFirewall()); client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to delete XFirewall: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to delete xfirewall: %w", err)
 	}
-	log.Info("XFirewall deleted")
+	log.Info("xfirewall deleted")
 
 	// todo: A better solution would be asking metal-api if this network is occupied before freeing the network.
-	if _, err := r.Driver.NetworkFree(cl.Spec.PrivateNetworkID); err != nil {
-		return ctrl.Result{Requeue: true}, nil
+	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
+		ID:        &cl.Spec.PrivateNetworkID,
+		Name:      &cl.Spec.Partition,
+		ProjectID: &cl.Spec.ProjectID,
+	})
+
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to list metal-stack networks: %w", err)
+	}
+
+	if len := len(resp.Networks); len > 1 {
+		return ctrl.Result{}, fmt.Errorf("more than one network listed: %w", err)
+	} else if len == 1 {
+		if _, err := r.Driver.NetworkFree(cl.Spec.PrivateNetworkID); err != nil {
+			return ctrl.Result{Requeue: true}, nil
+		}
 	}
 	log.Info("metal-stack network freed")
 
 	cl.RemoveFinalizer(clusterv1.XFirewallFinalizer)
 	if err := r.Update(ctx, cl); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to remove XCluster finalizer: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to remove xcluster finalizer: %w", err)
 	}
 	r.Log.Info("finalizer removed")
 

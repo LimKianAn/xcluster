@@ -39,22 +39,38 @@ e0ab02d2-27cd-5a5e-8efc-080ba80cf258        Waiting      8s                   
 2294c949-88f6-5390-8154-fa53d93a3313        Waiting      8s                               v1-small-x86         vagrant
 ```
 
-Then, in another terminal yet still in `mini-lab`, do
+Then, in another terminal yet still in folder *mini-lab* (must!), do
 
 ``` bash
 eval $(make dev-env) # for talking to metal-api in this shell
 cd ../xcluster
 ```
 
-Now you should be in the folder of *xcluster*. Then,
+Now you should be in folder *xcluster*. Then,
 
 ```bash
-make install
-kubectl apply -f config config/samples/cluster_v1_xcluster.yaml
-make run
+make
 ```
 
-Go back to the previous terminal where you did
+Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
+
+```
+kubectl get deployment -A
+```
+
+Then, deploy your *xcluster*!
+
+```bash
+kubectl apply -f config/samples/cluster_v1_xcluster.yaml
+```
+
+Check out the brand new *CR*!
+
+```bash
+kubectl get xcluster,xfirewall -A
+```
+
+Then go back to the previous terminal where you did
 
 ```bash
 docker-compose run metalctl machine ls
@@ -159,7 +175,7 @@ func (r *XFirewallReconciler) DeleteFirewall(ctx context.Context, fw *clusterv1.
 }
 ```
 
-## Functions errors.IsNotFound and client.IgnoreNotFound
+## func errors.IsNotFound and client.IgnoreNotFound
 
 When you have different handlers depending on whether the error is **the instance not found**, you can consider using `errors.IsNotFound(err)` as follows from **xcluster_controller.go**:
 
