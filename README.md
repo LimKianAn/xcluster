@@ -61,7 +61,7 @@ kubectl get deployment -A
 Then, deploy your *xcluster*!
 
 ```bash
-kubectl apply -f config/samples/cluster_v1_xcluster.yaml
+kubectl apply -f config/samples/xcluster.yaml
 ```
 
 Check out the brand new *CR*!
@@ -140,20 +140,30 @@ When you want to do some clean-up before *api-server* deletes your resource upon
 The *api-server* will not delete the very instance before its *finalizer*s are all removed from the instance. For example, in **xcluster_controller.go** we add the above finalier to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
 
 ```go
-func (r *XClusterReconciler) FreeMetalStackNetwork(ctx context.Context, cl *clusterv1.XCluster, log logr.Logger) (ctrl.Result, error) {
-	if _, err := r.Driver.NetworkFree(cl.Spec.PrivateNetworkID); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to free metal-stack network: %w", err)
+	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
+		ID:        &cl.Spec.PrivateNetworkID,
+		Name:      &cl.Spec.Partition,
+		ProjectID: &cl.Spec.ProjectID,
+	})
+
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to list metal-stack networks: %w", err)
+	}
+
+	if len := len(resp.Networks); len > 1 {
+		return ctrl.Result{}, fmt.Errorf("more than one network listed: %w", err)
+	} else if len == 1 {
+		if _, err := r.Driver.NetworkFree(cl.Spec.PrivateNetworkID); err != nil {
+			return ctrl.Result{Requeue: true}, nil
+		}
 	}
 	log.Info("metal-stack network freed")
 
 	cl.RemoveFinalizer(clusterv1.XFirewallFinalizer)
 	if err := r.Update(ctx, cl); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to remove XCluster finalizer: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to remove xcluster finalizer: %w", err)
 	}
 	r.Log.Info("finalizer removed")
-
-	return ctrl.Result{}, nil
-}
 ```
 
 Likewise, in **xfirewall_controller.go** we add an finalizer to the `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:

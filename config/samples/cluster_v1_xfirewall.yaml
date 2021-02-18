@@ -1,5 +1,0 @@
-apiVersion: cluster.www.x-cellent.com/v1
-kind: XFirewall
-metadata:
-  name: x-cellent
-spec:
