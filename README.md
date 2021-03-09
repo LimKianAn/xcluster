@@ -3,15 +3,15 @@
 
 ## Goal
 
-On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains a *metal-stack* network and a *metal-stack* firewall. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you.
+On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains a *metal-stack* network and a *metal-stack* firewall. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples.
 
 ## CustomResource XCluster and XFirewall
 
-In this post, we will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples. We created two *CustomResource* (*CR*): `XCluster` and `XFirewall`. `XCluster` represents the computer cluster and `XCluster` corresponds to *metal-stack* resource *firewall*. We would like to keep it simple. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way.
+We created two *CustomResourceDefinition* (CRD): `XCluster` and `XFirewall`. `XCluster` represents the computer cluster and `XFirewall` corresponds to *metal-stack* resource *firewall*. We would like to keep it simple. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way.
 
 ## Demo
 
-Clone the repo of *mini-lab* and *xcluster* in the same folder.
+Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcluster* in the same folder.
 
 ```console
 ├── mini-lab
@@ -54,17 +54,17 @@ make
 
 Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
 
-```
+```bash
 kubectl get deployment -A
 ```
 
-Then, deploy your *xcluster*!
+Then, deploy your *xcluster*.
 
 ```bash
 kubectl apply -f config/samples/xcluster.yaml
 ```
 
-Check out the brand new *CR*!
+Check out your brand new *custom resources*.
 
 ```bash
 kubectl get xcluster,xfirewall -A
@@ -78,35 +78,49 @@ docker-compose run metalctl machine ls
 
 Repeat the command and you should see a *metal-stack* firewall running.
 
-## kubebuilder markers for CustomerResourceDefinition (CRD)
+## kubebuilder markers for CRD
 
 *kubebuilder* provides lots of handful markers. Here are some examples:
 
-``` go
-// +kubebuilder:object:root=true
-```
+1. API Resource Type
 
-This denotes the following *go* `struct` will be the *API resource* in the url: `/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster`
+   ``` go
+   // +kubebuilder:object:root=true
+   ```
 
-```go
-// +kubebuilder:subresource:status
-```
+   The *go* `struct` under this marker will be an *API resource type* in the url. For example, the url path to `XCluster` instance *myxcluster* would be
 
-This denotes the following *go* `sturct` contains a *API subresource*: `/apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/mycluster/status`
+   ```url
+   /apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/myxcluster
+   ```
 
-```go
-// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
-```
+1. API Subresource
 
-This specifies the columns of the results on the terminal when you do `kubetctl get`.
+   ```go
+   // +kubebuilder:subresource:status
+   ```
+
+   The *go* `sturct` under this marker contains *API subresource* status. For the last example, the url path to the status of the instance would be:
+
+   ```url
+   /apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/myxcluster/status
+   ```
+
+1. Terminal Output
+
+   ```go
+   // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
+   ```
+
+   This specifies an extra column of output on terminal when you do `kubetctl get`.
 
 ## metal-api
 
-[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to build a data center. You can try it out on *mini-lab*. It's also where we built this demo project.
+[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to build a data center. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fuldiliing what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
 
 ## Wire up metal-api client metalgo.Driver
 
-`metalgo.Driver` is the client in *go* code land for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set the `Driver` of the controllers as shown in the following snippet from **main.go**, .
+`metalgo.Driver` is the client in *go* code land for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set the `Driver` of the controllers as shown in the following snippet from [**main.go**](https://github.com/LimKianAn/xcluster/blob/main/main.go), .
 
 ```go
 	if err = (&controllers.XClusterReconciler{
@@ -122,8 +136,7 @@ This specifies the columns of the results on the terminal when you do `kubetctl 
 
 ## Role-based access control (RBAC)
 
-With the following lines in **xcluster_controller.go** and the euivalent lines in **xfirewall_controller.go** (in our case overlapped), *kubebuiler* generates **config/rbac/role.yaml** and wire up everything for your manager pod when you do `make deploy`.
-
+With the following lines in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) and the euivalent lines in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) (in our case overlapped), *kubebuiler* generates [**role.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/rbac/role.yaml) and wire up everything for your *xcluster-controller-manager* pod when you do `make deploy`. The `verbs` are the actions your pod is allowed to perform on the `resources`, which are `xclusters` and `xfirewalls` in our case.
 ```go
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xclusters/status,verbs=get;update;patch
@@ -133,11 +146,11 @@ With the following lines in **xcluster_controller.go** and the euivalent lines i
 
 ## Finalizer
 
-When you want to do some clean-up before *api-server* deletes your resource upon `kubectl delete` in no time, *finalizer* comes in handy. It's just a string. For example, the finalizer of `XCluster` in **xcluster_types.go**:
+When you want to do some clean-up before *api-server* deletes your resource in no time upon `kubectl delete`, *finalizer* comes in handy. It's just a string. For example, the finalizer of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
-The *api-server* will not delete the very instance before its *finalizer*s are all removed from the instance. For example, in **xcluster_controller.go** we add the above finalier to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
+The *api-server* will not delete the instance before its *finalizer*s are all removed from the instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalier to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
 
 ```go
 	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
@@ -166,7 +179,7 @@ The *api-server* will not delete the very instance before its *finalizer*s are a
 	r.Log.Info("finalizer removed")
 ```
 
-Likewise, in **xfirewall_controller.go** we add an finalizer to the `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:
+Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add an finalizer to the `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:
 
 ```go
 func (r *XFirewallReconciler) DeleteFirewall(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
