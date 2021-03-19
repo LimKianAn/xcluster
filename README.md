@@ -3,11 +3,13 @@
 
 ## Goal
 
-On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains a *metal-stack* network and a *metal-stack* firewall. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples.
+On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains *metal-stack* resources. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples.
 
-## CustomResource XCluster and XFirewall
+## Architecture
 
-We created two *CustomResourceDefinition* (CRD): `XCluster` and `XFirewall`. `XCluster` represents the computer cluster and `XFirewall` corresponds to *metal-stack* resource *firewall*. We would like to keep it simple. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way.
+We created two *CustomResourceDefinition* (CRD), `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of recociliation.
+
+![architecture](hack/xcluster.drawio.svg)
 
 ## Demo
 
@@ -250,4 +252,4 @@ func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 ## Wrap-up
 
-Check out the code in this project for more details. Let us know if you want more *metal-stack* and *kubebuilder*. Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
+Check out the code in this project for more details. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way. If you want more blog posts about *metal-stack* and *kubebuilder*, let us know! Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
