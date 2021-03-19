@@ -87,6 +87,15 @@ Check out your brand new *custom resources*.
 kubectl get xcluster,xfirewall -A
 ```
 
+The results should read:
+```bash
+NAME                                           READY
+xcluster.cluster.www.x-cellent.com/x-cellent   true
+
+NAME                                            READY
+xfirewall.cluster.www.x-cellent.com/x-cellent   true
+```
+
 COMMENT: maybe console output would also be nice such that a reader knows he's seeing the same things you do and to make sure he's still on the right track
 
 Then go back to the previous terminal where you did
@@ -97,7 +106,13 @@ docker-compose run metalctl machine ls
 
 Repeat the command and you should see a *metal-stack* firewall running. 
 
+```bash
+ID                                                      LAST EVENT      WHEN    AGE     HOSTNAME                PROJECT                                 SIZE            IMAGE                          PARTITION 
+e0ab02d2-27cd-5a5e-8efc-080ba80cf258                    Waiting         41s                                                                             v1-small-x86                                   vagrant  
+2294c949-88f6-5390-8154-fa53d93a3313                    Phoned Home     21s     14m 19s x-cellent-firewall      00000000-0000-0000-0000-000000000000    v1-small-x86    Firewall 2 Ubuntu 20201126     vagrant  
+```
 
+The reconciliation logic in reconcilers did their job to deliver what's in the sample [manifest](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml). This manifest is the only thing the user has to worry about.
 
 COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic about the end result? 😅
 
@@ -174,7 +189,7 @@ When you want to do some clean-up before the kubernetes *api-server* deletes you
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
-The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
+The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance. We can see that in action in the following listing. We use the `Driver` mentioned earlier to ask *metal-api* if the *metal-stack network* we allocated is still there. If so, we use the `Driver` to free it and then remove teh *finalizer* of `XCluster`. 
 
 ```go
 	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
@@ -203,7 +218,7 @@ The *api-server* will not delete the instance before its *finalizer*s are all re
 	r.Log.Info("finalizer removed")
 ```
 
-Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add the finalizer to `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:
+Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add the finalizer to `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall (`r.Driver.MachineDelete(fw.Spec.MachineID)` in the following listing) and then remove the finalizer from the instance:
 
 ```go
 func (r *XFirewallReconciler) DeleteFirewall(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
@@ -277,3 +292,4 @@ func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 Check out the code in this project for more details. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way. If you want more blog posts about *metal-stack* and *kubebuilder*, let us know! Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
 
 COMMENT: to me it feels like the explanations could be a bit more general and then point the reader to specific code examples, most of the readers will not know metal-stack very well.
+Reply: I still keep the part of `metal-stack` in it and added some descriptions..
