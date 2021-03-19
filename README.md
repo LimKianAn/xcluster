@@ -1,20 +1,23 @@
-
-# xcluster
+# Use Kubebuilder to Write a Controller on Top of Metal-stack
 COMMENT: what will be the actual blog title?
 
-On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains *metal-stack* resources. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples.
+Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconcilation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you should be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
 
 COMMENT: what is a "minimal computer cluster"? perhaps a short introduction for what kind of "example controller" we are building here would be nice. What is the overall goal of this exercise? The introductory sentence should be understandable by readers who don't know kubebuilder, too. this way, readers can better decide what this article is about and if they want to continue reading. maybe, try to outline the structure of this article, too: what will we do first, what will we do in the end?
 
 ## Architecture
 
-We created two *CustomResourceDefinition* (CRD), `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation.
+We created two *CRD*, `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation and also the corresponding [*controllers*](https://github.com/LimKianAn/xcluster/tree/main/controllers) which reconcile the states of the resources.
 
 ![architecture](hack/xcluster.drawio.svg)
 
+## metal-api
+
+[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to turn your data center into elastic cloud infrastructure. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfilling what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
+
 ## Demo
 
-Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcluster* in the same folder.
+Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcluster* in the same folder. *mini-lab* is a local development platform, on which you can play with *metal-stack* resources.
 
 ```console
 ├── mini-lab
@@ -30,7 +33,9 @@ cd mini-lab
 make
 ```
 
-It's going to take some time to finish. From time to time, do
+It's going to take some time to finish. Behind the scene, a [kind](https://github.com/kubernetes-sigs/kind/) cluster is created, *metal-api* related kubernetes resources are deployed, and multiple *linux kernel-based virtual machines* are created for *metal-stack* switches and machines. 
+
+From time to time, do
 
 ```bash
 docker-compose run metalctl machine ls
@@ -59,7 +64,10 @@ Now you should be in folder *xcluster*. Then,
 make
 ```
 
-COMMENT: explain what happens in the background now?
+Behind the scene, all related kubernetes resources are deployed:
+- *CRD*s of `XCluster` and `XFirewall`
+- *xcluster-controller-manager* `Deployment` which manages two controllers with the reconciliation logic of yours inside
+- `ClusterRole` and `ClusterRoleBinding` which entitile your manager to manage the resources `XCluster` and `XFirewall`.
 
 Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
 
@@ -87,7 +95,9 @@ Then go back to the previous terminal where you did
 docker-compose run metalctl machine ls
 ```
 
-Repeat the command and you should see a *metal-stack* firewall running.
+Repeat the command and you should see a *metal-stack* firewall running. 
+
+
 
 COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic about the end result? 😅
 
@@ -95,7 +105,7 @@ COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic ab
 
 COMMENT: what is a marker? haven't read the kubebuilder book which could be a problem for me now, but at least a link to the docs would be nice
 
-*kubebuilder* provides lots of handful markers. Here are some examples:
+*kubebuilder* provides lots of handful [markers](https://book.kubebuilder.io/reference/markers.html). Here are some examples:
 
 1. API Resource Type
 
@@ -129,11 +139,7 @@ COMMENT: what is a marker? haven't read the kubebuilder book which could be a pr
 
    This specifies an extra column of output on terminal when you do `kubectl get`.
 
-## metal-api
 
-[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to turn your data center into elastic cloud infrastructure. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfilling what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
-
-COMMENT: isn't this paragraph a little late in the game?
 
 ## Wire up metal-api client metalgo.Driver
 
