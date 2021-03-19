@@ -1,5 +1,5 @@
 
-# xcluster, a minimal computer cluster
+# xcluster
 
 ## Goal
 
