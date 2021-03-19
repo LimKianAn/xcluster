@@ -1,11 +1,14 @@
 
 # xcluster
+COMMENT: what will be the actual blog title?
 
 On top of [*metal-stack*](https://github.com/metal-stack) and [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder), we built a minimal computer cluster which contains *metal-stack* resources. We would like to walk you through this process to show you *metal-stack* and share what we learnt about *kubebuilder* with you. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples.
 
+COMMENT: what is a "minimal computer cluster"? perhaps a short introduction for what kind of "example controller" we are building here would be nice. What is the overall goal of this exercise? The introductory sentence should be understandable by readers who don't know kubebuilder, too. this way, readers can better decide what this article is about and if they want to continue reading. maybe, try to outline the structure of this article, too: what will we do first, what will we do in the end?
+
 ## Architecture
 
-We created two *CustomResourceDefinition* (CRD), `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of recociliation.
+We created two *CustomResourceDefinition* (CRD), `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation.
 
 ![architecture](hack/xcluster.drawio.svg)
 
@@ -18,18 +21,22 @@ Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcl
 └── xcluster
 ```
 
-Download the prerequisite of [*mini-lab*](https://github.com/metal-stack/mini-lab#requirements). Then,
+COMMENT: explain mini-lab briefly, most of the people will not know what it is.
+
+Download the prerequisites of [*mini-lab*](https://github.com/metal-stack/mini-lab#requirements). Then,
 
 ```bash
 cd mini-lab
 make
 ```
 
-It's going to take some time to finish. From time to tiem, do
+It's going to take some time to finish. From time to time, do
 
 ```bash
 docker-compose run metalctl machine ls
 ```
+
+COMMENT: explain what happens in the background now?
 
 Till you see **Waiting** under **LAST EVENT** as follows:
 
@@ -52,6 +59,8 @@ Now you should be in folder *xcluster*. Then,
 make
 ```
 
+COMMENT: explain what happens in the background now?
+
 Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
 
 ```bash
@@ -70,6 +79,8 @@ Check out your brand new *custom resources*.
 kubectl get xcluster,xfirewall -A
 ```
 
+COMMENT: maybe console output would also be nice such that a reader knows he's seeing the same things you do and to make sure he's still on the right track
+
 Then go back to the previous terminal where you did
 
 ```bash
@@ -78,7 +89,11 @@ docker-compose run metalctl machine ls
 
 Repeat the command and you should see a *metal-stack* firewall running.
 
+COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic about the end result? 😅
+
 ## kubebuilder markers for CRD
+
+COMMENT: what is a marker? haven't read the kubebuilder book which could be a problem for me now, but at least a link to the docs would be nice
 
 *kubebuilder* provides lots of handful markers. Here are some examples:
 
@@ -100,7 +115,7 @@ Repeat the command and you should see a *metal-stack* firewall running.
    // +kubebuilder:subresource:status
    ```
 
-   The *go* `sturct` under this marker contains *API subresource* status. For the last example, the url path to the status of the instance would be:
+   The *go* `struct` under this marker contains *API subresource* status. For the last example, the url path to the status of the instance would be:
 
    ```url
    /apis/cluster.www.x-cellent.com/v1/namespaces/myns/xclusters/myxcluster/status
@@ -112,15 +127,17 @@ Repeat the command and you should see a *metal-stack* firewall running.
    // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
    ```
 
-   This specifies an extra column of output on terminal when you do `kubetctl get`.
+   This specifies an extra column of output on terminal when you do `kubectl get`.
 
 ## metal-api
 
-[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to build a data center. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfiliing what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
+[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to turn your data center into elastic cloud infrastructure. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfilling what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
+
+COMMENT: isn't this paragraph a little late in the game?
 
 ## Wire up metal-api client metalgo.Driver
 
-`metalgo.Driver` is the client in *go* code for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set field `Driver` of both controllers as shown in the following snippet from [**main.go**](https://github.com/LimKianAn/xcluster/blob/main/main.go), .
+`metalgo.Driver` is the client in *go* code for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set field `Driver` of both controllers as shown in the following snippet from [**main.go**](https://github.com/LimKianAn/xcluster/blob/main/main.go).
 
 ```go
 	if err = (&controllers.XClusterReconciler{
@@ -136,7 +153,8 @@ Repeat the command and you should see a *metal-stack* firewall running.
 
 ## Role-based access control (RBAC)
 
-With the following lines in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) and the euivalent lines in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) (in our case overlapped), *kubebuiler* generates [**role.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/rbac/role.yaml) and wire up everything for your *xcluster-controller-manager* pod when you do `make deploy`. The `verbs` are the actions your pod is allowed to perform on the `resources`, which are `xclusters` and `xfirewalls` in our case.
+With the following lines in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) and the equivalent lines in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) (in our case overlapped), *kubebuiler* generates [**role.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/rbac/role.yaml) and wire up everything for your *xcluster-controller-manager* pod when you do `make deploy`. The `verbs` are the actions your pod is allowed to perform on the `resources`, which are `xclusters` and `xfirewalls` in our case.
+
 ```go
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xclusters/status,verbs=get;update;patch
@@ -146,11 +164,11 @@ With the following lines in [**xcluster_controller.go**](https://github.com/LimK
 
 ## Finalizer
 
-When you want to do some clean-up before *api-server* deletes your resource in no time upon `kubectl delete`, *finalizer* comes in handy. *Finalizer* is a string. For example, the *finalizer* of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
+When you want to do some clean-up before the kubernetes *api-server* deletes your resource in no time upon `kubectl delete`, *finalizers* comes in handy. A *finalizer* is simply a string constant stored in the `finalizers` field of a Kubernetes object's metadata. For example, the *finalizer* of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
-The *api-server* will not delete the instance before its *finalizer*s are all removed from the instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalier to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
+The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance:
 
 ```go
 	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
@@ -251,3 +269,5 @@ func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 ## Wrap-up
 
 Check out the code in this project for more details. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way. If you want more blog posts about *metal-stack* and *kubebuilder*, let us know! Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
+
+COMMENT: to me it feels like the explanations could be a bit more general and then point the reader to specific code examples, most of the readers will not know metal-stack very well.
