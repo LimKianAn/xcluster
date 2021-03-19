@@ -116,11 +116,11 @@ Repeat the command and you should see a *metal-stack* firewall running.
 
 ## metal-api
 
-[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to build a data center. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fuldiliing what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
+[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to build a data center. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfiliing what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
 
 ## Wire up metal-api client metalgo.Driver
 
-`metalgo.Driver` is the client in *go* code land for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set the `Driver` of the controllers as shown in the following snippet from [**main.go**](https://github.com/LimKianAn/xcluster/blob/main/main.go), .
+`metalgo.Driver` is the client in *go* code for talking to *metal-api*. To enable both controllers of `XCluster` and `XFirewall` to do that, we created a `metalgo.Driver` named `metalClient` and set field `Driver` of both controllers as shown in the following snippet from [**main.go**](https://github.com/LimKianAn/xcluster/blob/main/main.go), .
 
 ```go
 	if err = (&controllers.XClusterReconciler{
@@ -146,7 +146,7 @@ With the following lines in [**xcluster_controller.go**](https://github.com/LimK
 
 ## Finalizer
 
-When you want to do some clean-up before *api-server* deletes your resource in no time upon `kubectl delete`, *finalizer* comes in handy. It's just a string. For example, the finalizer of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
+When you want to do some clean-up before *api-server* deletes your resource in no time upon `kubectl delete`, *finalizer* comes in handy. *Finalizer* is a string. For example, the *finalizer* of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
@@ -179,7 +179,7 @@ The *api-server* will not delete the instance before its *finalizer*s are all re
 	r.Log.Info("finalizer removed")
 ```
 
-Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add an finalizer to the `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:
+Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add the finalizer to `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall and then remove the finalizer from the instance:
 
 ```go
 func (r *XFirewallReconciler) DeleteFirewall(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
@@ -214,7 +214,7 @@ When you have different handlers depending on whether the error is **the instanc
 		fw = cl.ToXFirewall()
 ```
 
-Sometimes if we can do nothing against the error **the instance not found**, we might simply stop the reconciliation without requeueing the request as follows:
+If we can do nothing against the error **the instance not found**, we might simply stop the reconciliation without requeueing the request as follows:
 
 ```go
 	cl := &clusterv1.XCluster{}
@@ -225,7 +225,7 @@ Sometimes if we can do nothing against the error **the instance not found**, we 
 
 ## Exponential Back-Off
 
-As far as requeue is concerned, returning `ctrl.Result{}, err` and `ctrl.Result{Requeue: true}, nil` are the same as shown in the first `if` clause and the second `else if` clause in the [source](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L256). Moreover, exponential back-off can be observed where dependencies of a [controller](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.5.0/pkg/controller/controller.go#L90) are set and in the definition of [`workqueue.DefaultControllerRateLimiter`](https://github.com/kubernetes/client-go/blob/0b19784585bd0a0ee5509855829ead81feaa2bdc/util/workqueue/default_rate_limiters.go#L39).
+As far as requeue is concerned, returning `ctrl.Result{}, err` and `ctrl.Result{Requeue: true}, nil` are the same as shown in this [`if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L256) clause and this [`else if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L271) clause in the source code. Moreover, exponential back-off can be observed in the source code where dependencies of [controller](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.5.0/pkg/controller/controller.go#L90) are set and where [`func workqueue.DefaultControllerRateLimiter`](https://github.com/kubernetes/client-go/blob/0b19784585bd0a0ee5509855829ead81feaa2bdc/util/workqueue/default_rate_limiters.go#L39) is defined.
 
 ## ControllerReference
 
@@ -237,7 +237,7 @@ ControllerReference is a kind of `OwnerReference` that enables the garbage colle
 		}
 ```
 
-Since `XClusterController` owns some `XFirewall` instances, we have to inform the manager to invoke the function `Reconcile` upon any change of an `XFirewall` instance:
+Since `XCluster` owns `XFirewall` instance, we have to inform the manager that it should reconciling `XCluster` upon any change of an `XFirewall` instance:
 
 ```go
 func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -250,4 +250,4 @@ func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 ## Wrap-up
 
-Check out the code in this project for more details. Let us know if you want more of *metal-stack* and *kubebuilder*. Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
+Check out the code in this project for more details. Let us know if you want more *metal-stack* and *kubebuilder*. Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
