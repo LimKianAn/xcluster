@@ -1,7 +1,7 @@
-# Use Kubebuilder to Write a Controller on Top of Metal-stack
+# Write a Controller on Top of Metal-Stack by Using Kubebuilder
 COMMENT: what will be the actual blog title?
 
-Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuiler book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you should be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
+Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you should be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
 
 COMMENT: what is a "minimal computer cluster"? perhaps a short introduction for what kind of "example controller" we are building here would be nice. What is the overall goal of this exercise? The introductory sentence should be understandable by readers who don't know kubebuilder, too. this way, readers can better decide what this article is about and if they want to continue reading. maybe, try to outline the structure of this article, too: what will we do first, what will we do in the end?
 
@@ -33,7 +33,7 @@ cd mini-lab
 make
 ```
 
-It's going to take some time to finish. Behind the scene, a [kind](https://github.com/kubernetes-sigs/kind/) cluster is created, *metal-api* related kubernetes resources are deployed, and multiple *linux kernel-based virtual machines* are created for *metal-stack* switches and machines. 
+It's going to take some time to finish. Behind the scene, a [kind](https://github.com/kubernetes-sigs/kind/) cluster is created, *metal-api* related kubernetes resources are deployed, and multiple *linux kernel-based virtual machines* are created for *metal-stack* switches and machines.
 
 From time to time, do
 
@@ -67,7 +67,7 @@ make
 Behind the scene, all related kubernetes resources are deployed:
 - *CRD*s of `XCluster` and `XFirewall`
 - *xcluster-controller-manager* `Deployment` which manages two controllers with the reconciliation logic of yours inside
-- `ClusterRole` and `ClusterRoleBinding` which entitile your manager to manage the resources `XCluster` and `XFirewall`.
+- `ClusterRole` and `ClusterRoleBinding` which entitle your manager to manage the resources `XCluster` and `XFirewall`.
 
 Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
 
@@ -104,12 +104,12 @@ Then go back to the previous terminal where you did
 docker-compose run metalctl machine ls
 ```
 
-Repeat the command and you should see a *metal-stack* firewall running. 
+Repeat the command and you should see a *metal-stack* firewall running.
 
 ```bash
-ID                                                      LAST EVENT      WHEN    AGE     HOSTNAME                PROJECT                                 SIZE            IMAGE                          PARTITION 
-e0ab02d2-27cd-5a5e-8efc-080ba80cf258                    Waiting         41s                                                                             v1-small-x86                                   vagrant  
-2294c949-88f6-5390-8154-fa53d93a3313                    Phoned Home     21s     14m 19s x-cellent-firewall      00000000-0000-0000-0000-000000000000    v1-small-x86    Firewall 2 Ubuntu 20201126     vagrant  
+ID                                                      LAST EVENT      WHEN    AGE     HOSTNAME                PROJECT                                 SIZE            IMAGE                          PARTITION
+e0ab02d2-27cd-5a5e-8efc-080ba80cf258                    Waiting         41s                                                                             v1-small-x86                                   vagrant
+2294c949-88f6-5390-8154-fa53d93a3313                    Phoned Home     21s     14m 19s x-cellent-firewall      00000000-0000-0000-0000-000000000000    v1-small-x86    Firewall 2 Ubuntu 20201126     vagrant
 ```
 
 The reconciliation logic in reconcilers did their job to deliver what's in the sample [manifest](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml). This manifest is the only thing the user has to worry about.
@@ -174,7 +174,7 @@ COMMENT: what is a marker? haven't read the kubebuilder book which could be a pr
 
 ## Role-based access control (RBAC)
 
-With the following lines in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) and the equivalent lines in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) (in our case overlapped), *kubebuiler* generates [**role.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/rbac/role.yaml) and wire up everything for your *xcluster-controller-manager* pod when you do `make deploy`. The `verbs` are the actions your pod is allowed to perform on the `resources`, which are `xclusters` and `xfirewalls` in our case.
+With the following lines in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) and the equivalent lines in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) (in our case overlapped), *kubebuilder* generates [**role.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/rbac/role.yaml) and wire up everything for your *xcluster-controller-manager* pod when you do `make deploy`. The `verbs` are the actions your pod is allowed to perform on the `resources`, which are `xclusters` and `xfirewalls` in our case.
 
 ```go
 // +kubebuilder:rbac:groups=cluster.www.x-cellent.com,resources=xclusters,verbs=get;list;watch;create;update;patch;delete
@@ -189,7 +189,7 @@ When you want to do some clean-up before the kubernetes *api-server* deletes you
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
-The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance. We can see that in action in the following listing. We use the `Driver` mentioned earlier to ask *metal-api* if the *metal-stack network* we allocated is still there. If so, we use the `Driver` to free it and then remove teh *finalizer* of `XCluster`. 
+The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance. We can see that in action in the following listing. We use the `Driver` mentioned earlier to ask *metal-api* if the *metal-stack network* we allocated is still there. If so, we use the `Driver` to free it and then remove teh *finalizer* of `XCluster`.
 
 ```go
 	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
