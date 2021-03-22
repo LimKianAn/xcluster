@@ -1,14 +1,10 @@
 # Write Controllers on Top of Metal-Stack by Using Kubebuilder
 
-COMMENT: what will be the actual blog title?
-
-Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder) which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you will be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
-
-COMMENT: what is a "minimal computer cluster"? perhaps a short introduction for what kind of "example controller" we are building here would be nice. What is the overall goal of this exercise? The introductory sentence should be understandable by readers who don't know kubebuilder, too. this way, readers can better decide what this article is about and if they want to continue reading. maybe, try to outline the structure of this article, too: what will we do first, what will we do in the end?
+Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt quite a few things about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder) which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you will be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
 
 ## Architecture
 
-We created two *CRDs*, `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents a cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation and also the corresponding [*controllers*](https://github.com/LimKianAn/xcluster/tree/main/controllers) which reconcile the states of the resources.
+We created two *CRDs*, `XCluster` and `XFirewall` as shown in the following figure. `XCluster` represents a cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation and also the corresponding [*controllers*](https://github.com/LimKianAn/xcluster/tree/main/controllers) which reconcile the states of the resources.
 
 ![architecture](hack/xcluster.drawio.svg)
 
@@ -25,8 +21,6 @@ Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcl
 └── xcluster
 ```
 
-COMMENT: explain mini-lab briefly, most of the people will not know what it is.
-
 Download the prerequisites of [*mini-lab*](https://github.com/metal-stack/mini-lab#requirements). Then,
 
 ```bash
@@ -41,8 +35,6 @@ From time to time, do
 ```bash
 docker-compose run metalctl machine ls
 ```
-
-COMMENT: explain what happens in the background now?
 
 Till you see **Waiting** under **LAST EVENT** as follows:
 
@@ -97,8 +89,6 @@ NAME                                            READY
 xfirewall.cluster.www.x-cellent.com/x-cellent   true
 ```
 
-COMMENT: maybe console output would also be nice such that a reader knows he's seeing the same things you do and to make sure he's still on the right track
-
 Then go back to the previous terminal where you did
 
 ```bash
@@ -115,11 +105,7 @@ e0ab02d2-27cd-5a5e-8efc-080ba80cf258                    Waiting         41s   
 
 The reconciliation logic in reconcilers did the job to deliver what's in the sample [manifest](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml). This manifest is the only thing the user has to worry about.
 
-COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic about the end result? 😅
-
 ## kubebuilder markers for CRD
-
-COMMENT: what is a marker? haven't read the kubebuilder book which could be a problem for me now, but at least a link to the docs would be nice
 
 *kubebuilder* provides lots of handful [markers](https://book.kubebuilder.io/reference/markers.html). Here are some examples:
 
@@ -291,6 +277,3 @@ func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 ## Wrap-up
 
 Check out the code in this project for more details. If you want a fully-fledged implementation, stay tuned! Our *cluster-api-provider-metalstack* is on the way. If you want more blog posts about *metal-stack* and *kubebuilder*, let us know! Special thanks go to [*Grigoriy Mikhalkin*](https://github.com/GrigoriyMikhalkin).
-
-COMMENT: to me it feels like the explanations could be a bit more general and then point the reader to specific code examples, most of the readers will not know metal-stack very well.
-Reply: I still keep the part of `metal-stack` in it and added some descriptions..
