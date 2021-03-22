@@ -1,4 +1,4 @@
-# Write a Controller on Top of Metal-Stack by Using Kubebuilder
+# Write Controllers on Top of Metal-Stack by Using Kubebuilder
 COMMENT: what will be the actual blog title?
 
 Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you should be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
