@@ -1,23 +1,24 @@
 # Write Controllers on Top of Metal-Stack by Using Kubebuilder
+
 COMMENT: what will be the actual blog title?
 
-Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you should be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
+Along the way of implementing [*cluster-api*](https://github.com/kubernetes-sigs/cluster-api) on top of [*metal-stack*](https://github.com/metal-stack) we learnt something about [*kubebuilder*](https://github.com/kubernetes-sigs/kubebuilder)  which enables us to write reconciliation logic easily and we want to share that knowledge with you, so we built this project, an extremely simplified version of cluster which contains *metal-stack* resources. We will assume you already went through [*kubebuilder book*](https://book.kubebuilder.io) and are looking for more hands-on examples. By referencing the code in this project, you will be able to create a *CustomResourceDefinition* (CRD), write its reconciliation logic and deploy it.
 
 COMMENT: what is a "minimal computer cluster"? perhaps a short introduction for what kind of "example controller" we are building here would be nice. What is the overall goal of this exercise? The introductory sentence should be understandable by readers who don't know kubebuilder, too. this way, readers can better decide what this article is about and if they want to continue reading. maybe, try to outline the structure of this article, too: what will we do first, what will we do in the end?
 
 ## Architecture
 
-We created two *CRD*, `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents the computer cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation and also the corresponding [*controllers*](https://github.com/LimKianAn/xcluster/tree/main/controllers) which reconcile the states of the resources.
+We created two *CRD*, `XCluster` and `XFirewall`, as shown in the following figure. `XCluster` represents a cluster which contains *metal-stack network* and `XFirewall`. `XFirewall` corresponds to *metal-stack firewall*. The circular arrows imply the nature of reconciliation and also the corresponding [*controllers*](https://github.com/LimKianAn/xcluster/tree/main/controllers) which reconcile the states of the resources.
 
 ![architecture](hack/xcluster.drawio.svg)
 
 ## metal-api
 
-[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to turn your data center into elastic cloud infrastructure. You can try it out on *mini-lab*, where we built this demo project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfilling what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
+[*metal-api*](https://github.com/metal-stack/metal-api) manages all *metal-stack* resources, including machine, firewall, switch, OS image, IP, network and more. They are constructs which enable you to turn your data center into elastic cloud infrastructure. You can try it out on [*mini-lab*](https://github.com/metal-stack/mini-lab), a local development platform where you can play with *metal-stack* resources and where we built this project. In this project, *metal-api* does the real job. It allocates the network and creates the firewall, fulfilling what you wish in the [**xcluster.yaml**](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml).
 
 ## Demo
 
-Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcluster* in the same folder. *mini-lab* is a local development platform, on which you can play with *metal-stack* resources.
+Clone the repo of [*mini-lab*](https://github.com/metal-stack/mini-lab) and *xcluster* in the same folder.
 
 ```console
 ├── mini-lab
@@ -65,8 +66,8 @@ make
 ```
 
 Behind the scene, all related kubernetes resources are deployed:
-- *CRD*s of `XCluster` and `XFirewall`
-- *xcluster-controller-manager* `Deployment` which manages two controllers with the reconciliation logic of yours inside
+- *CRD* of `XCluster` and `XFirewall`
+- `Deployment` *xcluster-controller-manager* which manages two controllers with the reconciliation logic of `XCluster` and `XFirewall` respectively
 - `ClusterRole` and `ClusterRoleBinding` which entitle your manager to manage the resources `XCluster` and `XFirewall`.
 
 Then, check out your *xcluster-controller-manager* running alongside other *metal-stack* deployments.
@@ -112,7 +113,7 @@ e0ab02d2-27cd-5a5e-8efc-080ba80cf258                    Waiting         41s   
 2294c949-88f6-5390-8154-fa53d93a3313                    Phoned Home     21s     14m 19s x-cellent-firewall      00000000-0000-0000-0000-000000000000    v1-small-x86    Firewall 2 Ubuntu 20201126     vagrant
 ```
 
-The reconciliation logic in reconcilers did their job to deliver what's in the sample [manifest](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml). This manifest is the only thing the user has to worry about.
+The reconciliation logic in reconcilers did the job to deliver what's in the sample [manifest](https://github.com/LimKianAn/xcluster/blob/main/config/samples/xcluster.yaml). This manifest is the only thing the user has to worry about.
 
 COMMENT: maybe summarize what was happening, maybe be a bit more enthusiastic about the end result? 😅
 
@@ -185,11 +186,11 @@ With the following lines in [**xcluster_controller.go**](https://github.com/LimK
 
 ## Finalizer
 
-When you want to do some clean-up before the kubernetes *api-server* deletes your resource in no time upon `kubectl delete`, *finalizers* comes in handy. A *finalizer* is simply a string constant stored in the `finalizers` field of a Kubernetes object's metadata. For example, the *finalizer* of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
+When you want to do some clean-up before the kubernetes *api-server* deletes your resource in no time upon `kubectl delete`, *finalizers* come in handy. A *finalizer* is simply a string constant stored in field `finalizers` of a Kubernetes resource instance's metadata. For example, the *finalizer* of `XCluster` in [**xcluster_types.go**](https://github.com/LimKianAn/xcluster/blob/main/api/v1/xcluster_types.go):
 
 `const XClusterFinalizer = "xcluster.finalizers.cluster.www.x-cellent.com"`
 
-The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance. We can see that in action in the following listing. We use the `Driver` mentioned earlier to ask *metal-api* if the *metal-stack network* we allocated is still there. If so, we use the `Driver` to free it and then remove teh *finalizer* of `XCluster`.
+The *api-server* will not delete the instance before its *finalizer*s are all removed from the resource instance. For example, in [**xcluster_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xcluster_controller.go) we add the above finalizer to the `XCluster` instance, so later when the instance is about to be deleted, the *api-server* can't delete the instance before we've freed the *metal-stack* network and then removed the finalizer from the instance. We can see that in action in the following listing. We use the `Driver` mentioned earlier to ask *metal-api* if the *metal-stack network* we allocated is still there. If so, we use the `Driver` to free it and then remove the *finalizer* of `XCluster`.
 
 ```go
 	resp, err := r.Driver.NetworkFind(&metalgo.NetworkFindRequest{
@@ -218,7 +219,7 @@ The *api-server* will not delete the instance before its *finalizer*s are all re
 	r.Log.Info("finalizer removed")
 ```
 
-Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add the finalizer to `XFirewall` instance. Likewise, the *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall (`r.Driver.MachineDelete(fw.Spec.MachineID)` in the following listing) and then remove the finalizer from the instance:
+Likewise, in [**xfirewall_controller.go**](https://github.com/LimKianAn/xcluster/blob/main/controllers/xfirewall_controller.go) we add the finalizer to `XFirewall` instance. The *api-server* can't delete the instance before we clean up the underlying *metal-stack* firewall (`r.Driver.MachineDelete(fw.Spec.MachineID)` in the following listing) and then remove the finalizer from the instance:
 
 ```go
 func (r *XFirewallReconciler) DeleteFirewall(ctx context.Context, fw *clusterv1.XFirewall, log logr.Logger) (ctrl.Result, error) {
@@ -264,7 +265,7 @@ If we can do nothing against the error **the instance not found**, we might simp
 
 ## Exponential Back-Off
 
-As far as requeue is concerned, returning `ctrl.Result{}, err` and `ctrl.Result{Requeue: true}, nil` are the same as shown in this [`if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L256) clause and this [`else if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L271) clause in the source code. Moreover, exponential back-off can be observed in the source code where dependencies of [controller](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.5.0/pkg/controller/controller.go#L90) are set and where [`func workqueue.DefaultControllerRateLimiter`](https://github.com/kubernetes/client-go/blob/0b19784585bd0a0ee5509855829ead81feaa2bdc/util/workqueue/default_rate_limiters.go#L39) is defined.
+As far as requeue is concerned, returning `ctrl.Result{}, err` and `ctrl.Result{Requeue: true}, nil` are the same as shown in this [`if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L256) clause and this [`else if`](https://github.com/kubernetes-sigs/controller-runtime/blob/0fcf28efebc9a977c954f00d40af966d6a4aeae3/pkg/internal/controller/controller.go#L271) clause in the source code. Moreover, exponential back-off can be observed in the source code where dependencies of a [controller](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.5.0/pkg/controller/controller.go#L90) are set and where [`func workqueue.DefaultControllerRateLimiter`](https://github.com/kubernetes/client-go/blob/0b19784585bd0a0ee5509855829ead81feaa2bdc/util/workqueue/default_rate_limiters.go#L39) is defined.
 
 ## ControllerReference
 
@@ -276,7 +277,7 @@ ControllerReference is a kind of `OwnerReference` that enables the garbage colle
 		}
 ```
 
-Since `XCluster` owns `XFirewall` instance, we have to inform the manager that it should reconciling `XCluster` upon any change of an `XFirewall` instance:
+Since `XCluster` owns `XFirewall` instance, we have to inform the manager that it should reconcile	 `XCluster` upon any change of an `XFirewall` instance:
 
 ```go
 func (r *XClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
